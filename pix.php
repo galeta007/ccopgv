@@ -14,43 +14,42 @@ if (!$data) {
     exit;
 }
 
-// ==== CREDENCIAIS IMPULSE PAY ====
+// ==== CREDENCIAIS IMPULSE PAY (via Config Vars do Heroku) ====
 $publicKey = getenv('IMPULSE_PUBLIC_KEY');
 $privateKey = getenv('IMPULSE_PRIVATE_KEY');
+$postbackUrl = getenv('IMPULSE_POSTBACK_URL');
 $auth = base64_encode($publicKey . ":" . $privateKey);
 
 $url = "https://api.impulse-pay.com/v1/transactions";
 
-// ==== MAPEAMENTO DO PAYLOAD (Black Cat -> Impulse Pay) ====
-// Ajuste os "??" abaixo conforme os nomes reais que seu checkout envia hoje.
-$valorEmCentavos = $data['amount'] ?? $data['valor'] ?? $data['value'] ?? 0;
+// ==== MONTA O PAYLOAD A PARTIR DO QUE O SEU CHECKOUT JÁ ENVIA ====
+$items = [];
+foreach (($data['items'] ?? []) as $item) {
+    $items[] = [
+        "title" => $item['title'] ?? 'Produto',
+        "unit_price" => (int) ($item['unitPrice'] ?? $item['unit_price'] ?? 0),
+        "quantity" => (int) ($item['quantity'] ?? 1),
+        "tangible" => $item['tangible'] ?? false
+    ];
+}
 
 $payload = [
-    "amount" => (int) $valorEmCentavos,
+    "amount" => (int) ($data['amount'] ?? 0),
     "payment_method" => "PIX",
-    "postback_url" => "http://regularizeprocess.org/caminho/webhook.php", // ajuste pro seu endpoint de webhook
-    "items" => [
-        [
-            "title" => $data['produto'] ?? $data['product'] ?? $data['title'] ?? "Produto",
-            "unit_price" => (int) $valorEmCentavos,
-            "quantity" => 1,
-            "tangible" => false,
-            "external_ref" => $data['produto_id'] ?? $data['external_ref'] ?? null
-        ]
-    ],
+    "items" => $items,
     "customer" => [
-        "name" => $data['nome'] ?? $data['name'] ?? '',
-        "email" => $data['email'] ?? '',
-        "phone" => $data['telefone'] ?? $data['phone'] ?? '',
+        "name" => $data['customer']['name'] ?? '',
+        "email" => $data['customer']['email'] ?? '',
+        "phone" => $data['customer']['phone'] ?? '',
         "document" => [
-            "number" => $data['cpf'] ?? $data['document'] ?? '',
-            "type" => "CPF"
+            "number" => $data['customer']['document']['number'] ?? '',
+            "type" => strtoupper($data['customer']['document']['type'] ?? 'CPF')
         ]
     ]
 ];
 
-if (!empty($data['utm'])) {
-    $payload['utm'] = $data['utm'];
+if (!empty($postbackUrl)) {
+    $payload['postback_url'] = $postbackUrl;
 }
 
 $ch = curl_init();
@@ -69,14 +68,13 @@ curl_close($ch);
 
 $responseData = json_decode($response, true);
 
-// Padroniza a saída para o seu front-end
 $output = [
     "success" => $httpcode >= 200 && $httpcode < 300,
     "transaction_id" => $responseData['id'] ?? null,
     "status" => $responseData['status'] ?? null,
     "pix_copy_paste" => $responseData['pix']['copy_paste'] ?? null,
     "expires_at" => $responseData['pix']['expires_at'] ?? null,
-    "raw" => $responseData // remova se não quiser expor a resposta completa
+    "raw" => $responseData
 ];
 
 http_response_code($httpcode);
