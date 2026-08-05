@@ -15,8 +15,8 @@ if (!$data) {
 }
 
 // ==== CREDENCIAIS IMPULSE PAY ====
-$publicKey = "pk_EmJoszXY5ZsIr75iCf9buUXMghm1yVBxeXme9LEeWz0";
-$privateKey = "sk_ip_riuRjqiJ9jGznhy9F281aQq_PsNbXZn-CAl80K5Y"; // pegue no painel, clicando no olho
+$publicKey = getenv('IMPULSE_PUBLIC_KEY');
+$privateKey = getenv('IMPULSE_PRIVATE_KEY');
 $auth = base64_encode($publicKey . ":" . $privateKey);
 
 $url = "https://api.impulse-pay.com/v1/transactions";
