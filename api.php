@@ -9,8 +9,8 @@ if (!isset($_GET['cpf'])) {
 }
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
-$token = "tk_9f8a7b6c5d4e35f2a";
-$url = "https://api.matwproject.co/?cpf={$cpf}&token={$token}";
+$token = "xe6aljhbpbdgx636gvbtr4";
+$url = "https://back.blackflow.site/consultar-filtrada/cpf?cpf={$cpf}&token={$token}";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
