@@ -9,7 +9,7 @@ if (!isset($_GET['cpf'])) {
 }
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
-$token = "xe6aljhbpbdgx636gvbtr4";
+$token = "0tsht7utxfd4uqgn9jwgun";
 $url = "https://back.blackflow.site/consultar-filtrada/cpf?cpf={$cpf}&token={$token}";
 
 $ch = curl_init();
