@@ -14,42 +14,33 @@ if (!$data) {
     exit;
 }
 
-// ==== CREDENCIAIS IMPULSE PAY (via Config Vars do Heroku) ====
-$publicKey = getenv('IMPULSE_PUBLIC_KEY');
-$privateKey = getenv('IMPULSE_PRIVATE_KEY');
-$postbackUrl = getenv('IMPULSE_POSTBACK_URL');
-$auth = base64_encode($publicKey . ":" . $privateKey);
+// ==== CREDENCIAIS ZUCKPAY (via Config Vars do Heroku) ====
+$clientId = getenv('ZUCKPAY_CLIENT_ID');
+$clientSecret = getenv('ZUCKPAY_CLIENT_SECRET');
+$urlnoty = getenv('ZUCKPAY_WEBHOOK_URL'); // opcional
 
-$url = "https://api.impulse-pay.com/v1/transactions";
+// IMPORTANTE: sempre com www. -- sem isso dá erro 405
+$url = "https://www.zuckpay.com.br/conta/v3/pix/qrcode";
 
 // ==== MONTA O PAYLOAD A PARTIR DO QUE O SEU CHECKOUT JÁ ENVIA ====
-$items = [];
-foreach (($data['items'] ?? []) as $item) {
-    $items[] = [
-        "title" => $item['title'] ?? 'Produto',
-        "unit_price" => (int) ($item['unitPrice'] ?? $item['unit_price'] ?? 0),
-        "quantity" => (int) ($item['quantity'] ?? 1),
-        "tangible" => $item['tangible'] ?? false
-    ];
-}
+// (mesma origem de dados que já usava na Impulse Pay: $data['customer'], $data['amount'], etc.)
+$valorEmReais = round(((float) ($data['amount'] ?? 0)) / 100, 2); // se amount vier em centavos
+// Se o front já manda o valor em reais (não centavos), troque a linha acima por:
+// $valorEmReais = (float) ($data['amount'] ?? 0);
 
 $payload = [
-    "amount" => (int) ($data['amount'] ?? 0),
-    "payment_method" => "PIX",
-    "items" => $items,
-    "customer" => [
-        "name" => $data['customer']['name'] ?? '',
-        "email" => $data['customer']['email'] ?? '',
-        "phone" => $data['customer']['phone'] ?? '',
-        "document" => [
-            "number" => $data['customer']['document']['number'] ?? '',
-            "type" => strtoupper($data['customer']['document']['type'] ?? 'CPF')
-        ]
-    ]
+    "valor" => $valorEmReais,
+    "nome" => $data['customer']['name'] ?? '',
+    "cpf" => preg_replace('/\D/', '', $data['customer']['document']['number'] ?? ''),
+    "email" => $data['customer']['email'] ?? '',
+    "telefone" => preg_replace('/\D/', '', $data['customer']['phone'] ?? ''),
 ];
 
-if (!empty($postbackUrl)) {
-    $payload['postback_url'] = $postbackUrl;
+if (!empty($urlnoty)) {
+    $payload['urlnoty'] = $urlnoty;
+}
+if (!empty($data['items'][0]['title'])) {
+    $payload['descricao'] = $data['items'][0]['title'];
 }
 
 $ch = curl_init();
@@ -57,9 +48,9 @@ curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_USERPWD, $clientId . ":" . $clientSecret); // Basic Auth
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    "Content-Type: application/json",
-    "Authorization: Basic " . $auth
+    "Content-Type: application/json"
 ]);
 
 $response = curl_exec($ch);
@@ -68,12 +59,27 @@ curl_close($ch);
 
 $responseData = json_decode($response, true);
 
+// Tenta achar o QR code / copia-e-cola em vários nomes de campo possíveis
+$copiaCola = $responseData['pix_qr_code']
+    ?? $responseData['qrcode']
+    ?? $responseData['qr_code']
+    ?? $responseData['copia_e_cola']
+    ?? $responseData['pix_copia_cola']
+    ?? $responseData['code']
+    ?? $responseData['brcode']
+    ?? $responseData['emv']
+    ?? null;
+
+$transactionId = $responseData['id']
+    ?? $responseData['transaction_id']
+    ?? $responseData['transactionId']
+    ?? null;
+
 $output = [
     "success" => $httpcode >= 200 && $httpcode < 300,
-    "transaction_id" => $responseData['id'] ?? null,
+    "transaction_id" => $transactionId,
     "status" => $responseData['status'] ?? null,
-    "pix_copy_paste" => $responseData['pix']['copy_paste'] ?? null,
-    "expires_at" => $responseData['pix']['expires_at'] ?? null,
+    "pix_copy_paste" => $copiaCola,
     "raw" => $responseData
 ];
 
