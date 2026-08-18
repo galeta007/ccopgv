@@ -15,8 +15,8 @@ if (!$data) {
 }
 
 // ==== CREDENCIAIS PAGFLEX (via Config Vars do Heroku) ====
-$apiKey = getenv('9cDu5KQCJHzI5ZJPIo7Sc79djPEm8ut6-7mI-p_rbE0'); // chave de PAGAMENTO (não a de saque)
-$notificationUrl = getenv('PAGFLEX_WEBHOOK_URL'); // opcional
+$apiKey = trim(getenv('9cDu5KQCJHzI5ZJPIo7Sc79djPEm8ut6-7mI-p_rbE0') ?: '');
+$notificationUrl = trim(getenv('PAGFLEX_WEBHOOK_URL') ?: '');
 
 $url = "https://api.pagflexbr.com/v1/payment";
 
@@ -49,6 +49,9 @@ $payload = [
 if (!empty($notificationUrl)) {
     $payload['notificationUrl'] = $notificationUrl;
 }
+
+// Log de debug (aparece no "heroku logs --tail", não afeta o cliente)
+error_log("PAGFLEX KEY LENGTH: " . strlen($apiKey));
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
