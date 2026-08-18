@@ -60,7 +60,9 @@ $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 $responseData = json_decode($response, true);
-$pixData = $responseData['pix'] ?? $responseData;
+
+// O código Pix vem dentro do campo "data" da resposta da PagFlex
+$pixData = $responseData['data'] ?? $responseData['pix'] ?? $responseData;
 
 $output = [
     "success" => $httpcode >= 200 && $httpcode < 300,
