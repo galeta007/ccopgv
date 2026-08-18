@@ -14,9 +14,8 @@ if (!$data) {
     exit;
 }
 
-// ==== CREDENCIAIS PAGFLEX (via Config Vars do Heroku) ====
-$apiKey = trim(getenv('9cDu5KQCJHzI5ZJPIo7Sc79djPEm8ut6-7mI-p_rbE0') ?: '');
-$notificationUrl = trim(getenv('PAGFLEX_WEBHOOK_URL') ?: '');
+// ==== CREDENCIAIS PAGFLEX (chave de PAGAMENTO, fixa no código) ====
+$apiKey = "9cDu5KQCJHzI5ZJPIo7Sc79djPEm8ut6-7mI-p_rbE0";
 
 $url = "https://api.pagflexbr.com/v1/payment";
 
@@ -27,7 +26,7 @@ foreach (($data['items'] ?? []) as $item) {
         "quantity" => (int) ($item['quantity'] ?? 1),
         "name" => $item['title'] ?? 'Produto',
         "price" => (int) ($item['unitPrice'] ?? $item['unit_price'] ?? 0),
-        "type" => "DIGITAL" // troque para "PHYSICAL" se o produto exigir entrega
+        "type" => "DIGITAL"
     ];
 }
 
@@ -46,13 +45,6 @@ $payload = [
     "items" => $items
 ];
 
-if (!empty($notificationUrl)) {
-    $payload['notificationUrl'] = $notificationUrl;
-}
-
-// Log de debug (aparece no "heroku logs --tail", não afeta o cliente)
-error_log("PAGFLEX KEY LENGTH: " . strlen($apiKey));
-
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_POST, 1);
@@ -68,8 +60,6 @@ $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 $responseData = json_decode($response, true);
-
-// O código Pix vem dentro de um sub-objeto (provavelmente "pix"), com fallback pra outros nomes comuns
 $pixData = $responseData['pix'] ?? $responseData;
 
 $output = [
