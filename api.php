@@ -9,17 +9,30 @@ if (!isset($_GET['cpf'])) {
 }
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
-$token = "0tsht7utxfd4uqgn9jwgun";
-$url = "https://api.amnesiatecnologia.lat/?token=707db4e1-0923-4dfd-ac5e-simpl3s&cpf={$cpf}";
+
+$url = "https://api.amnesiatecnologia.lat/?token=SEU_TOKEN&cpf=" . urlencode($cpf);
 
 $ch = curl_init();
+
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
 $response = curl_exec($ch);
+
+if ($response === false) {
+    http_response_code(502);
+    echo json_encode([
+        "error" => "Erro ao consultar API",
+        "details" => curl_error($ch)
+    ]);
+    curl_close($ch);
+    exit;
+}
+
 $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-http_response_code($httpcode);
+http_response_code($httpcode ?: 200);
 echo $response;
 ?>
