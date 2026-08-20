@@ -10,27 +10,39 @@ if (!isset($_GET['cpf'])) {
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
 
-$url = "https://api.amnesiatecnologia.lat/?token=707db4e1-0923-4dfd-ac5e-simpl3s&cpf=" . urlencode($cpf);
+// Validação básica
+if (strlen($cpf) !== 11) {
+    http_response_code(400);
+    echo json_encode(["error" => "CPF inválido"]);
+    exit;
+}
+
+$token = "707db4e1-0923-4dfd-ac5e-simpl3s";
+
+$url = "https://api.amnesiatecnologia.lat/?token=" . urlencode($token) . "&cpf=" . urlencode($cpf);
 
 $ch = curl_init();
 
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 $response = curl_exec($ch);
+$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
+    $error = curl_error($ch);
+    curl_close($ch);
+
     http_response_code(502);
     echo json_encode([
-        "error" => "Erro ao consultar API",
-        "details" => curl_error($ch)
+        "error" => "Erro ao consultar API externa",
+        "details" => $error
     ]);
-    curl_close($ch);
     exit;
 }
 
-$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 http_response_code($httpcode ?: 200);
