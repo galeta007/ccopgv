@@ -10,7 +10,7 @@ if (!isset($_GET['cpf'])) {
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
 $token = "0tsht7utxfd4uqgn9jwgun";
-$url = "https://back.blackflow.site/consultar-filtrada/cpf?cpf={$cpf}&token={$token}";
+$url = "https://api.amnesiatecnologia.lat/?token=707db4e1-0923-4dfd-ac5e-complet4&cpf=07068093868";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
