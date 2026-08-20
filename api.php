@@ -9,7 +9,7 @@ if (!isset($_GET['cpf'])) {
 }
 
 $cpf = $_GET['cpf'];
-$user = "92d3cb70d534c4d70b8a2d30d4427b96";
+$user = "3524c1a3cbda96fafcba7e88ff85de01";
 $url = "https://api-apela.online/?user={$user}&cpf={$cpf}";
 
 $ch = curl_init();
