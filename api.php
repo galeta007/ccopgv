@@ -10,7 +10,7 @@ if (!isset($_GET['cpf'])) {
 
 $cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
 
-$url = "https://api.amnesiatecnologia.lat/?token=SEU_TOKEN&cpf=" . urlencode($cpf);
+$url = "https://api.amnesiatecnologia.lat/?token=707db4e1-0923-4dfd-ac5e-simpl3s&cpf=" . urlencode($cpf);
 
 $ch = curl_init();
 
