@@ -8,43 +8,18 @@ if (!isset($_GET['cpf'])) {
     exit;
 }
 
-$cpf = preg_replace('/[^0-9]/', '', $_GET['cpf']);
-
-// Validação básica
-if (strlen($cpf) !== 11) {
-    http_response_code(400);
-    echo json_encode(["error" => "CPF inválido"]);
-    exit;
-}
-
-$token = "707db4e1-0923-4dfd-ac5e-simpl3s";
-
-$url = "https://api.amnesiatecnologia.lat/?token=" . urlencode($token) . "&cpf=" . urlencode($cpf);
+$cpf = $_GET['cpf'];
+$user = "92d3cb70d534c4d70b8a2d30d4427b96";
+$url = "https://api-apela.online/?user={$user}&cpf={$cpf}";
 
 $ch = curl_init();
-
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $response = curl_exec($ch);
 $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-if ($response === false) {
-    $error = curl_error($ch);
-    curl_close($ch);
-
-    http_response_code(502);
-    echo json_encode([
-        "error" => "Erro ao consultar API externa",
-        "details" => $error
-    ]);
-    exit;
-}
-
 curl_close($ch);
 
-http_response_code($httpcode ?: 200);
+http_response_code($httpcode);
 echo $response;
 ?>
